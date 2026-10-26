@@ -1,0 +1,49 @@
+# XcodeGen spec. The GitHub Actions workflow turns this into an Xcode project on a cloud Mac,
+# so you never need Xcode yourself.
+name: RoadScanner
+options:
+  bundleIdPrefix: com.roadscanner
+  deploymentTarget:
+    iOS: "17.0"
+
+targets:
+  RoadScanner:
+    type: application
+    platform: iOS
+    sources:
+      - path: RoadScanner
+    info:
+      path: RoadScanner/Info.plist
+      properties:
+        CFBundleDisplayName: Road Scanner
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # location: keep GPS running with the screen off
+        # audio: allow spoken alerts while in the background (plays through CarPlay)
+        # bluetooth-central: stay connected to the ESP32 sensor in the background
+        UIBackgroundModes:
+          - location
+          - audio
+          - bluetooth-central
+        NSLocationWhenInUseUsageDescription: Road Scanner uses your location to warn you about mapped speed and license-plate cameras near you.
+        NSLocationAlwaysAndWhenInUseUsageDescription: Road Scanner uses your location to warn you about mapped speed and license-plate cameras near you.
+        NSBluetoothAlwaysUsageDescription: Road Scanner connects to your ESP32 sensor to get police-equipment alerts.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.roadscanner.app.k7q29x
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_PREVIEWS: NO
+
+schemes:
+  RoadScanner:
+    build:
+      targets:
+        RoadScanner: all
