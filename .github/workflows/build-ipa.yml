@@ -1,6 +1,6 @@
-# Builds an unsigned RoadScanner.ipa on a GitHub cloud Mac.
-# Download it from the run's "Artifacts" section, then sign + install it with Sideloadly.
-name: Build iPhone app
+# Builds an unsigned RoadScanner.ipa on a GitHub cloud Mac, and the ESP32 sensor firmware.
+# Download both from the run's "Artifacts" section. Sign + install the .ipa with Sideloadly.
+name: Build app and firmware
 
 on:
   push:
@@ -43,4 +43,27 @@ jobs:
         with:
           name: RoadScanner-ipa
           path: RoadScanner.ipa
+          if-no-files-found: error
+
+  firmware:
+    # Builds the ESP32 sensor firmware with PlatformIO, so every push has a matching .bin
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build firmware
+        run: pio run -d esp32/RScanSensor
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RScan-firmware
+          path: esp32/RScanSensor/.pio/build/cyd/firmware.factory.bin
           if-no-files-found: error
