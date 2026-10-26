@@ -1,10 +1,13 @@
 import CoreBluetooth
 import Foundation
 
-/// UUIDs shared with the ESP32 firmware (esp32/AxonSensor_CYD/AxonSensor_CYD.ino). Change both together.
+/// UUIDs shared with the ESP32 firmware (esp32/RScanSensor/include/config.h). Change both together.
 enum SensorUUIDs {
     static let service = CBUUID(string: "6E3A0001-5C1B-4B3D-9E1E-7A2F4C8D0B11")
+    /// Board -> phone: "AXON,<mac>,<rssi>,<name>" notifications.
     static let alert = CBUUID(string: "6E3A0002-5C1B-4B3D-9E1E-7A2F4C8D0B11")
+    /// Phone -> board: the current time, so the board's SD log has real dates.
+    static let time = CBUUID(string: "6E3A0003-5C1B-4B3D-9E1E-7A2F4C8D0B11")
 }
 
 struct PoliceHit {
@@ -128,15 +131,21 @@ extension SensorLink: CBCentralManagerDelegate {
 extension SensorLink: CBPeripheralDelegate {
     nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let service = peripheral.services?.first(where: { $0.uuid == SensorUUIDs.service }) else { return }
-        peripheral.discoverCharacteristics([SensorUUIDs.alert], for: service)
+        peripheral.discoverCharacteristics([SensorUUIDs.alert, SensorUUIDs.time], for: service)
     }
 
     nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService,
                                 error: Error?) {
-        guard let characteristic = service.characteristics?.first(where: { $0.uuid == SensorUUIDs.alert }) else {
-            return
+        let characteristics = service.characteristics ?? []
+        if let alert = characteristics.first(where: { $0.uuid == SensorUUIDs.alert }) {
+            peripheral.setNotifyValue(true, for: alert)
         }
-        peripheral.setNotifyValue(true, for: characteristic)
+        // Older firmware has no time characteristic; then the board just logs uptime instead.
+        if let time = characteristics.first(where: { $0.uuid == SensorUUIDs.time }) {
+            let now = Int(Date().timeIntervalSince1970)
+            let offset = TimeZone.current.secondsFromGMT()
+            peripheral.writeValue(Data("TIME,\(now),\(offset)".utf8), for: time, type: .withResponse)
+        }
     }
 
     nonisolated func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic,

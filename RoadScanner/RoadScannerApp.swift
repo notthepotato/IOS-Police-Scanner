@@ -6,8 +6,13 @@ struct RoadScannerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(model)
+            TabView {
+                ContentView()
+                    .tabItem { Label("Scanner", systemImage: "dot.radiowaves.left.and.right") }
+                CameraMapView()
+                    .tabItem { Label("Map", systemImage: "map") }
+            }
+            .environmentObject(model)
         }
     }
 }

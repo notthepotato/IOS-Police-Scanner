@@ -1,0 +1,24 @@
+# RScan settings. Edit this file on your computer, put the card back in, then
+# restart the board (unplug it or press RST). Lines starting with # are ignored.
+
+# Beep pitch in Hz, and beeps per new detection (0 = silent).
+# Beeps need a small speaker on the 2-pin SPEAK connector.
+beep_hz = 2600
+beeps = 3
+
+# Seconds a device still counts as "in range" after its last signal.
+still_here_seconds = 20
+
+# Minutes a device has to be gone before it alerts again.
+realert_minutes = 2
+
+# Screen orientation: 1 = landscape, 3 = upside down.
+rotation = 1
+
+# Save every detection to rscan/log.csv on this card (on / off).
+log = on
+
+# Bluetooth address prefixes to watch for, each with a label.
+# Axon (body cams, Tasers, in-car systems) is the default. You can list up to 8.
+# Broad prefixes (phones, headphones, cars) will cause constant false alarms.
+watch = 00:25:DF Axon

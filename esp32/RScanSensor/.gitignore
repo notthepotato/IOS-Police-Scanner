@@ -1,0 +1,5 @@
+.pio/
+.vscode/*
+!.vscode/extensions.json
+host_tests/run
+host_tests/run.exe

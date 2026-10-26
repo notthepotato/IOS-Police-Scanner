@@ -94,6 +94,16 @@ final class ScannerModel: NSObject, ObservableObject {
         updateSensor()
     }
 
+    /// Best available location: live GPS while scanning, otherwise the last fix iOS remembers.
+    var lastKnownLocation: CLLocation? { location ?? manager.location }
+
+    /// Lets the map show your position even before you start scanning.
+    func requestLocationPermissionIfNeeded() {
+        if manager.authorizationStatus == .notDetermined {
+            manager.requestWhenInUseAuthorization()
+        }
+    }
+
     func testVoice() {
         speaker.say("Road Scanner test. If you hear this through the car, alerts are working.", force: true)
     }
@@ -167,7 +177,7 @@ final class ScannerModel: NSObject, ObservableObject {
         let range = Geo.rssiLabel(hit.rssi)
         speaker.say("Police equipment \(range)")
         let name = hit.name.isEmpty ? "" : " \(hit.name)"
-        addEvent("Axon device\(name) \(hit.address), \(hit.rssi) dBm (\(range))", police: true)
+        addEvent("Police gear\(name) \(hit.address), \(hit.rssi) dBm (\(range))", police: true)
     }
 
     private func addEvent(_ text: String, police: Bool) {

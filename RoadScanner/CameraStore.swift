@@ -7,8 +7,13 @@ struct Camera: Codable, Identifiable, Hashable {
     let lon: Double
     let kind: String   // "ALPR camera" or "Speed camera"
     let label: String  // manufacturer/operator if mapped, e.g. "Flock Safety"
+    /// Compass directions the camera faces (0 = north), when mappers recorded them.
+    /// Optional so camera lists saved by older versions still load.
+    var directions: [Double]? = nil
 
     var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
+
+    var isSpeedCamera: Bool { kind == "Speed camera" }
 
     var displayName: String { label.isEmpty ? kind : "\(kind) (\(label))" }
 
@@ -132,8 +137,42 @@ final class CameraStore: ObservableObject {
             let tags = element.tags ?? [:]
             let kind = tags["highway"] == "speed_camera" ? "Speed camera" : "ALPR camera"
             let label = tags["manufacturer"] ?? tags["brand"] ?? tags["operator"] ?? ""
-            return Camera(id: element.id, lat: lat, lon: lon, kind: kind, label: label)
+            let directions = parseDirections(tags["camera:direction"] ?? tags["direction"])
+            return Camera(id: element.id, lat: lat, lon: lon, kind: kind, label: label, directions: directions)
         }
+    }
+
+    /// OpenStreetMap direction tags: "135", "SE", "90;270" (two cameras on one pole), or a range like "45-135".
+    nonisolated static func parseDirections(_ raw: String?) -> [Double]? {
+        guard let raw, !raw.isEmpty else { return nil }
+        let cardinals: [String: Double] = [
+            "N": 0, "NNE": 22.5, "NE": 45, "ENE": 67.5, "E": 90, "ESE": 112.5, "SE": 135, "SSE": 157.5,
+            "S": 180, "SSW": 202.5, "SW": 225, "WSW": 247.5, "W": 270, "WNW": 292.5, "NW": 315, "NNW": 337.5,
+        ]
+        func normalized(_ degrees: Double) -> Double {
+            let d = degrees.truncatingRemainder(dividingBy: 360)
+            return d < 0 ? d + 360 : d
+        }
+        func value(_ token: String) -> Double? {
+            if let number = Double(token), number.isFinite { return normalized(number) }
+            return cardinals[token]
+        }
+
+        var result: [Double] = []
+        for part in raw.split(separator: ";") {
+            let token = part.trimmingCharacters(in: .whitespaces).uppercased()
+            if let single = value(token) {
+                result.append(single)
+            } else {
+                // "45-135" -> the middle of the range, handling wrap-around like "350-10"
+                let ends = token.split(separator: "-").map { String($0).trimmingCharacters(in: .whitespaces) }
+                if ends.count == 2, let from = value(ends[0]), let to = value(ends[1]) {
+                    let span = normalized(to - from)
+                    result.append(normalized(from + span / 2))
+                }
+            }
+        }
+        return result.isEmpty ? nil : Array(result.prefix(4))
     }
 
     // MARK: - Disk cache
