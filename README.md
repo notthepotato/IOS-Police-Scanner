@@ -10,6 +10,19 @@ Spoken alerts for mapped speed and license-plate (ALPR / Flock) cameras, plus po
 | `project.yml` | Project recipe the cloud build turns into an Xcode project |
 | `.github/workflows/build-ipa.yml` | Builds the app on a GitHub cloud Mac (so you don't need one), plus the sensor firmware |
 | `esp32/RScanSensor/` | PlatformIO project for the police sensor, an ESP32-2432S028R "Cheap Yellow Display": detects Axon gear, shows it on screen, logs it to the SD card, and alerts the phone |
+| `docs/images/` | Screenshots used in this README |
+
+## Screenshots
+
+### Police sensor (ESP32 Cheap Yellow Display)
+
+| Scanning, all clear | Police gear very close |
+|---|---|
+| ![Sensor screen: green ALL CLEAR, last seen 1:42 PM](docs/images/sensor-all-clear.png) | ![Sensor screen: red POLICE GEAR alert, VERY CLOSE, five signal bars](docs/images/sensor-police-close.png) |
+| **Muted, phone not connected, SD card error** | **Start-up** |
+| ![Sensor screen: POLICE GEAR NEARBY with MUTED and SD! in the header](docs/images/sensor-police-muted.png) | ![Sensor start-up screen with SD card status and controls](docs/images/sensor-startup.png) |
+
+*Rendered at 2× from the firmware's own drawing code and fonts. Colors on the real panel vary a little between boards.*
 
 ---
 
