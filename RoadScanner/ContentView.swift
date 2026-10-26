@@ -57,7 +57,7 @@ struct ContentView: View {
                     }
                 }
 
-                Section("Recent alerts") {
+                Section {
                     if model.events.isEmpty {
                         Text("Nothing yet").foregroundStyle(.secondary)
                     }
@@ -73,10 +73,24 @@ struct ContentView: View {
                             }
                         }
                     }
+                } header: {
+                    Text("Recent alerts")
+                } footer: {
+                    Text(Self.buildText)
+                        .padding(.top, 8)
                 }
             }
             .navigationTitle("Road Scanner")
         }
+    }
+
+    /// "Version 1.0 (build 7, 5c778c1)": the build number is the GitHub Actions run number.
+    private static var buildText: String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let version = info["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info["CFBundleVersion"] as? String ?? "?"
+        let commit = info["RSBuildCommit"] as? String ?? ""
+        return commit.isEmpty ? "Version \(version) (build \(build))" : "Version \(version) (build \(build), \(commit))"
     }
 
     private var gpsText: String {

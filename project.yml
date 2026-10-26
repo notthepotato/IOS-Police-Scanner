@@ -16,6 +16,10 @@ targets:
       path: RoadScanner/Info.plist
       properties:
         CFBundleDisplayName: Road Scanner
+        # The GitHub build fills these in (run number + commit) so the app can show which build it is
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        RSBuildCommit: "$(RS_BUILD_COMMIT)"
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
