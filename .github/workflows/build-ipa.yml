@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -31,6 +31,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            RS_BUILD_COMMIT=${GITHUB_SHA::7} \
             build
 
       - name: Package .ipa
@@ -39,7 +41,7 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/RoadScanner.app Payload/
           zip -qry RoadScanner.ipa Payload
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: RoadScanner-ipa
           path: RoadScanner.ipa
@@ -50,9 +52,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -62,7 +64,7 @@ jobs:
       - name: Build firmware
         run: pio run -d esp32/RScanSensor
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: RScan-firmware
           path: esp32/RScanSensor/.pio/build/cyd/firmware.factory.bin
