@@ -1,7 +1,7 @@
 import CoreBluetooth
 import Foundation
 
-/// UUIDs shared with the ESP32 firmware (esp32/AxonSensor/AxonSensor.ino). Change both together.
+/// UUIDs shared with the ESP32 firmware (esp32/AxonSensor_CYD/AxonSensor_CYD.ino). Change both together.
 enum SensorUUIDs {
     static let service = CBUUID(string: "6E3A0001-5C1B-4B3D-9E1E-7A2F4C8D0B11")
     static let alert = CBUUID(string: "6E3A0002-5C1B-4B3D-9E1E-7A2F4C8D0B11")

@@ -9,7 +9,7 @@ Spoken alerts for mapped speed and license-plate (ALPR / Flock) cameras, plus po
 | `RoadScanner/` | The iPhone app (SwiftUI) |
 | `project.yml` | Project recipe the cloud build turns into an Xcode project |
 | `.github/workflows/build-ipa.yml` | Builds the app on a GitHub cloud Mac, so you don't need one |
-| `esp32/AxonSensor/AxonSensor.ino` | ESP32 firmware that detects Axon police gear and sends alerts to the phone |
+| `esp32/AxonSensor_CYD/` | Firmware for the ESP32-2432S028R "Cheap Yellow Display": detects Axon police gear, shows it on its screen, and sends alerts to the phone |
 
 ---
 
@@ -46,18 +46,45 @@ What you'll hear:
 
 **Settings:** the alert distance (0.1, ¼ or ½ mile), voice on/off, and ESP32 sensor on/off.
 
-## 4. Build the ESP32 police sensor
+## 4. Set up the police sensor (ESP32 "Cheap Yellow Display")
 
-iPhones hide other devices' Bluetooth addresses from apps, so the phone can't spot Axon gear by itself. A cheap ESP32 board in the car does the scanning and forwards alerts to the app.
+iPhones hide other devices' Bluetooth addresses from apps, so the phone can't spot Axon gear by itself. The sensor is an **ESP32-2432S028R**, the 2.8" touchscreen board often called the "Cheap Yellow Display" (CYD). It sits in the car, does the scanning, shows what it finds on its own screen, and sends alerts to the app.
 
-**You need** any ESP32 with Bluetooth LE (ESP32, ESP32-S3, -C3 or -C6; **not the ESP32-S2**), a USB cable, and a USB car charger.
+**You need** the board, the micro-USB cable it comes with, and a USB car charger.
 
-1. In Arduino IDE, install the **esp32** board package (Boards Manager), then install **NimBLE-Arduino by h2zero**, version 2.x (Library Manager).
-2. Open `esp32/AxonSensor/AxonSensor.ino`, pick your board and port, and upload.
-3. Optional settings at the top of the sketch:
-   - `LED_PIN`: the onboard LED. GPIO 2 on most dev boards; set `-1` to disable.
-   - `BUZZER_PIN`: an active buzzer, so the sensor also works without the phone.
-4. Power it from the car's USB port. With the app scanning, it connects on its own, the LED stays lit while connected, and the app shows **ESP32 sensor: Connected**.
+### Flash it (Arduino IDE on Windows)
+
+1. Install [Arduino IDE 2](https://www.arduino.cc/en/software).
+2. **Boards Manager:** search **esp32**, then install **esp32 by Espressif Systems** (version 3.x).
+3. **Library Manager:** install these three:
+   - **NimBLE-Arduino** by h2zero (version 2.x)
+   - **Adafruit ILI9341** (click **Install all** when it asks about Adafruit GFX and Adafruit BusIO)
+   - **XPT2046_Touchscreen** by Paul Stoffregen
+4. Open `esp32/AxonSensor_CYD/AxonSensor_CYD.ino`. Keep `RScanTypes.h` in the same folder; it opens as a second tab.
+5. **Tools > Board > esp32 > ESP32 Dev Module**, and pick the board's COM port.
+6. Click **Upload**. If it stalls at "Connecting…", hold the **BOOT** button on the back of the board until the upload starts.
+
+**If no COM port shows up**, Windows needs the board's USB driver (the CH340 or CP210x chip next to the USB port). Install the driver for whichever chip yours has, then replug the board.
+
+### Using it
+
+| Screen | Meaning |
+|---|---|
+| Green **ALL CLEAR** | Scanning, no police gear in range. Shows when gear was last seen. |
+| Red **POLICE GEAR** | Axon gear in range. Live signal bars, how close it is, and how many devices. The red LED on the back lights too. |
+| **Phone** dot (top right) | Green when the iPhone app is connected. |
+
+| Control | Action |
+|---|---|
+| Tap the screen | Mute or unmute the beeps |
+| Hold the screen ~1 s | Cycle brightness 100% → 50% → 20%, handy at night |
+| **BOOT** button | Fix the colors if the screen looks inverted (some board revisions, usually the ones with both micro-USB and USB-C) |
+
+All three settings are remembered after power-off.
+
+**Optional speaker:** the board has a 2-pin **SPEAK** connector (1.25 mm). Plug in a small 8 Ω speaker and it beeps three times on each new detection. Without one, the screen and phone still alert.
+
+**Optional settings** at the top of the sketch: `SCREEN_ROTATION` (set `3` to flip the screen upside down), how long a device counts as "still here", and the beep pitch.
 
 The Serial Monitor (115200 baud) prints every detection, which is handy for testing at home.
 
@@ -68,5 +95,6 @@ The Serial Monitor (115200 baud) prints every detection, which is handy for test
 - **Coverage:** camera locations come from OpenStreetMap volunteers (the DeFlock project), so coverage is only as good as local mapping.
 - **Nevada:** state law bans red-light and speed cameras, so around Las Vegas you'll mostly get plate-reader alerts. Speed cameras matter when you drive into other states.
 - **Police gear range:** Bluetooth reaches roughly tens of meters. "Police equipment" means an officer's gear is close by, not that a speed trap is ahead. Not every officer's gear broadcasts.
+- **Mounting the sensor:** put it where it doesn't block your view of the road, and check the windshield-mount rules for any state you drive through. The phone voice and beeps are enough while driving, so you don't need to watch the screen.
 - **CarPlay screen:** the app plays audio only and doesn't appear on the CarPlay screen. Putting it there would need a paid developer account and Apple's approval of a CarPlay entitlement.
 - **Driving:** set things up before you drive. The voice is there so you don't have to touch the phone.
