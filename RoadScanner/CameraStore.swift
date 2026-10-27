@@ -48,6 +48,9 @@ final class CameraStore: ObservableObject {
     @Published private(set) var cameras: [Camera] = []
     @Published private(set) var status = "No cameras downloaded yet"
     @Published private(set) var isDownloading = false
+    /// Called after a download replaces the camera list, so distances can be recalculated
+    /// right away instead of waiting for you to move.
+    var onChange: (@MainActor () -> Void)?
 
     let downloadRadius: Double = 20_000  // meters
     private var center: CLLocationCoordinate2D?
@@ -91,6 +94,7 @@ final class CameraStore: ObservableObject {
             coveredRadius = downloadRadius
             status = "\(found.count) cameras within \(Units.short(downloadRadius))"
             save(savedAt: Date())
+            onChange?()
         } catch {
             status = "Download failed (\(error.localizedDescription)). Using \(cameras.count) saved cameras."
         }

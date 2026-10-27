@@ -1,5 +1,7 @@
 # Builds an unsigned RoadScanner.ipa on a GitHub cloud Mac, and the ESP32 sensor firmware.
-# Download both from the run's "Artifacts" section. Sign + install the .ipa with Sideloadly.
+# Every push to the main branch also publishes both files as the repo's latest Release, so the
+# newest app is always at:  https://github.com/<you>/<repo>/releases/latest
+# (no sign-in, no zip). Install the .ipa with iloader.
 name: Build app and firmware
 
 on:
@@ -40,6 +42,7 @@ jobs:
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/RoadScanner.app Payload/
           zip -qry RoadScanner.ipa Payload
+          echo "RoadScanner.ipa: $(stat -f%z RoadScanner.ipa) bytes, build ${{ github.run_number }} (${GITHUB_SHA::7})" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v6
         with:
@@ -69,3 +72,34 @@ jobs:
           name: RScan-firmware
           path: esp32/RScanSensor/.pio/build/cyd/firmware.factory.bin
           if-no-files-found: error
+
+  release:
+    # Publishes both files as the latest GitHub Release (only for pushes to the main branch,
+    # not tags). Download link: https://github.com/<you>/<repo>/releases/latest
+    needs: [build, firmware]
+    if: github.ref_type == 'branch' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: build-${{ github.run_number }}
+        run: |
+          mv out/firmware.factory.bin out/rscan-cyd-factory.bin
+          ls -la out
+          # A re-run reuses the run number, so replace that release if it already exists.
+          gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" out/RoadScanner.ipa out/rscan-cyd-factory.bin \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "Build ${{ github.run_number }} (${GITHUB_SHA::7})" \
+            --notes "RoadScanner.ipa: install with iloader. The app shows \"build ${{ github.run_number }}\" at the bottom of the Scanner tab. rscan-cyd-factory.bin: ESP32 sensor firmware, flash at address 0x0." \
+            --latest

@@ -67,6 +67,13 @@ final class ScannerModel: NSObject, ObservableObject {
         manager.pausesLocationUpdatesAutomatically = false
         speaker.enabled = voiceOn
         sensor.onHit = { [weak self] hit in self?.handlePolice(hit) }
+        // GPS only reports when you move, so recalculate as soon as new cameras arrive;
+        // otherwise "Nearest cameras" stays empty while you're parked.
+        cameras.onChange = { [weak self] in self?.recheckCameras() }
+    }
+
+    private func recheckCameras() {
+        if let location { handle(location) }
     }
 
     // MARK: - Start / stop

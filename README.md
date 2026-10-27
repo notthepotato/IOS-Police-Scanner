@@ -31,7 +31,9 @@ Spoken alerts for mapped speed and license-plate (ALPR / Flock) cameras, plus po
 1. Create a new repository on GitHub. Public is easiest: GitHub's Mac build machines are free for public repos. Private works too, but uses your monthly free build minutes faster.
 2. Upload **everything in this folder**, including the hidden `.github` folder. The simplest way is [GitHub Desktop](https://desktop.github.com): clone your empty repo, copy these files into it, then commit and push.
 3. Open the repo's **Actions** tab. The **Build app and firmware** run starts automatically on every push and takes about 5–10 minutes. You can also start it by hand with **Run workflow**.
-4. When it finishes with a green check, open the run, scroll to **Artifacts**, and download **RoadScanner-ipa**. Unzip it to get `RoadScanner.ipa`. (**RScan-firmware** is the sensor firmware, built from the same code; see section 4.)
+4. When it finishes with a green check, open your repo's **Releases** page (`https://github.com/<you>/<repo>/releases/latest`, also linked on the right side of the repo's main page). Download **RoadScanner.ipa**. It's a plain file, not a zip, and you don't need to sign in. The same release has **rscan-cyd-factory.bin**, the sensor firmware built from the same code (see section 4).
+
+**Check you've got the right build:** after installing, the bottom of the Scanner tab says "Version 1.0 (build N, abc1234)". N matches the release name ("Build N"), and there are **Scanner** and **Map** tabs at the bottom of the screen. If that line is missing, an old `.ipa` was installed.
 
 If the build fails, open the failed step, copy the red error lines, and send them to Claude to fix.
 
