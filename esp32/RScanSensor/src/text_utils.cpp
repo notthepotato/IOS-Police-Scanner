@@ -225,6 +225,15 @@ bool parseTimeSync(const char* text, int64_t& unixSeconds, int32_t& utcOffsetSec
   return true;
 }
 
+Command parseCommand(const char* text) {
+  char buf[32];
+  copyText(buf, sizeof(buf), text);
+  char* cmd = trim(buf);
+  for (char* p = cmd; *p; p++) *p = (char)toupper((unsigned char)*p);
+  if (strcmp(cmd, "TEST,SPEAKER") == 0) return Command::SpeakerTest;
+  return Command::None;
+}
+
 void formatClock12h(const struct tm& local, char* out, size_t outLen) {
   int hour = local.tm_hour % 12;
   if (hour == 0) hour = 12;

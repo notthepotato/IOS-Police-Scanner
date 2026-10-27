@@ -166,7 +166,17 @@ static void testTimeSync() {
   CHECK(strcmp(clock, "12:00 PM") == 0);
 }
 
+static void testCommands() {
+  CHECK(parseCommand("TEST,SPEAKER") == Command::SpeakerTest);
+  CHECK(parseCommand("test,speaker\r\n") == Command::SpeakerTest);
+  CHECK(parseCommand("  TEST,SPEAKER ") == Command::SpeakerTest);
+  CHECK(parseCommand("TEST,SPEAKERS") == Command::None);
+  CHECK(parseCommand("TIME,1793046459,0") == Command::None);
+  CHECK(parseCommand("") == Command::None);
+}
+
 int main() {
+  testCommands();
   testMacPrefix();
   testSanitize();
   testConfig();

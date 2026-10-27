@@ -29,6 +29,9 @@ void showSplash(const char* sdLine, uint16_t sdLineColor565, const char* configL
 void redrawAll(uint32_t nowMs, const Status& status, const Nearby& nearby);
 void update(uint32_t nowMs, const Status& status, const Nearby& nearby);
 
+// Shows a short message in the footer (e.g. "Speaker test") for `durationMs`.
+void showMessage(const char* text, uint32_t nowMs, uint32_t durationMs);
+
 // Colors used outside the screen module.
 uint16_t green();
 uint16_t amber();

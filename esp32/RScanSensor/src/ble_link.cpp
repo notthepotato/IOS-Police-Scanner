@@ -4,6 +4,8 @@
 #include <NimBLEDevice.h>
 #include <string.h>
 
+#include <atomic>
+
 #include "config.h"
 #include "phone_clock.h"
 #include "text_utils.h"
@@ -21,6 +23,7 @@ portMUX_TYPE gDevicesLock = portMUX_INITIALIZER_UNLOCKED;
 QueueHandle_t gHitQueue = nullptr;
 NimBLECharacteristic* gAlertChar = nullptr;
 volatile bool gPhoneConnected = false;
+std::atomic<bool> gSpeakerTestRequested{false};
 
 const WatchPrefix* findWatch(const uint8_t* addrLE) {
   for (int i = 0; i < gSettings->watchCount; i++) {
@@ -109,6 +112,15 @@ class TimeCallbacks : public NimBLECharacteristicCallbacks {
   }
 };
 
+// The phone writes short commands here, e.g. "TEST,SPEAKER". Runs on the Bluetooth task, so it
+// only raises a flag; the main loop plays the sound.
+class CommandCallbacks : public NimBLECharacteristicCallbacks {
+  void onWrite(NimBLECharacteristic* characteristic, NimBLEConnInfo& connInfo) override {
+    std::string value = characteristic->getValue();
+    if (parseCommand(value.c_str()) == Command::SpeakerTest) gSpeakerTestRequested = true;
+  }
+};
+
 }  // namespace
 
 void begin(const Settings& settings) {
@@ -125,6 +137,8 @@ void begin(const Settings& settings) {
   gAlertChar->setValue("READY");
   NimBLECharacteristic* timeChar = service->createCharacteristic(RSCAN_TIME_UUID, NIMBLE_PROPERTY::WRITE);
   timeChar->setCallbacks(new TimeCallbacks());
+  NimBLECharacteristic* commandChar = service->createCharacteristic(RSCAN_COMMAND_UUID, NIMBLE_PROPERTY::WRITE);
+  commandChar->setCallbacks(new CommandCallbacks());
   server->start();  // also starts the service
 
   NimBLEAdvertising* advertising = NimBLEDevice::getAdvertising();
@@ -173,5 +187,7 @@ void keepScanning() {
   NimBLEScan* scan = NimBLEDevice::getScan();
   if (!scan->isScanning()) scan->start(0, false, true);
 }
+
+bool takeSpeakerTestRequest() { return gSpeakerTestRequested.exchange(false); }
 
 }  // namespace ble

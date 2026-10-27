@@ -57,7 +57,7 @@ What you'll hear:
 - **Cameras:** "Flock camera ahead, 600 feet." Cameras that are already behind you stay quiet. Each camera alerts once per pass.
 - **Police gear:** "Police equipment close." Requires the ESP32 sensor below.
 
-**Settings:** the alert distance (0.1, ¼ or ½ mile), voice on/off, and ESP32 sensor on/off.
+**Settings:** the alert distance (0.1, ¼ or ½ mile), voice on/off, and ESP32 sensor on/off. **Test voice** checks the phone's audio through the car. **Test sensor speaker** makes the ESP32 board play three rising tones and show "Speaker test" on its screen, even when the board is muted. It needs the sensor connected and running the current firmware.
 
 **Map tab:** shows the downloaded cameras around you: orange for plate readers (Flock/ALPR), red for speed cameras. A shaded wedge shows which way a camera points, when mappers recorded it. While scanning, a blue circle shows your alert distance. Tap a camera to see what it is, how far away it is, which way it faces, and its OpenStreetMap entry. When you're not scanning, scroll anywhere and tap **Search here** to load the cameras for that area.
 
@@ -106,7 +106,7 @@ The header shows a green **SD** while logging, or an amber **SD!** if a write fa
 
 All three settings are remembered after power-off.
 
-**Optional speaker:** the board has a 2-pin **SPEAK** connector (1.25 mm). Plug in a small 8 Ω speaker and it beeps on each new detection (three beeps by default; change it in `config.txt`). Without one, the screen and phone still alert.
+**Optional speaker:** the board has a 2-pin **SPEAK** connector (1.25 mm). Plug in a small 8 Ω speaker and it beeps on each new detection (three beeps by default; change it in `config.txt`). Without one, the screen and phone still alert. To check the speaker, tap **Test sensor speaker** in the app.
 
 ### Code layout
 

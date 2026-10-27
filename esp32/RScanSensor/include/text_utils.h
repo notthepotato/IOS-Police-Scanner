@@ -40,5 +40,9 @@ int formatPhoneMessage(char* out, size_t outLen, const Hit& hit);
 // Parses "TIME,<unix seconds>,<UTC offset seconds>" written by the phone.
 bool parseTimeSync(const char* text, int64_t& unixSeconds, int32_t& utcOffsetSeconds);
 
+// Commands the phone can send to the board.
+enum class Command { None, SpeakerTest };
+Command parseCommand(const char* text);
+
 // "1:42 PM" from a local time.
 void formatClock12h(const struct tm& local, char* out, size_t outLen);

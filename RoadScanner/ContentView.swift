@@ -34,6 +34,7 @@ struct ContentView: View {
                     Toggle("Voice alerts", isOn: $model.voiceOn)
                     Toggle("ESP32 police sensor", isOn: $model.sensorOn)
                     Button("Test voice") { model.testVoice() }
+                    SensorSpeakerTestButton(sensor: model.sensor)
                 }
 
                 Section("Nearest cameras") {
@@ -150,6 +151,33 @@ private struct CameraStatusRow: View {
             .buttonStyle(.bordered)
             .disabled(location == nil || store.isDownloading)
         }
+    }
+}
+
+/// Makes the ESP32 board play its test tones, to check the speaker on its SPEAK connector.
+private struct SensorSpeakerTestButton: View {
+    @ObservedObject var sensor: SensorLink
+
+    var body: some View {
+        Button {
+            sensor.testSpeaker()
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Test sensor speaker")
+                if let hint {
+                    Text(hint)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .disabled(!sensor.canSendCommands)
+    }
+
+    private var hint: String? {
+        if sensor.canSendCommands { return nil }
+        if sensor.status == .connected { return "Update the sensor's firmware to use this" }
+        return "Connect the ESP32 sensor first"
     }
 }
 

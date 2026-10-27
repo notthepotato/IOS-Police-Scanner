@@ -25,4 +25,7 @@ void notifyPhone(const char* message, size_t length);
 // Restarts the scan if the radio stopped it.
 void keepScanning();
 
+// True once after the phone asks for a speaker test (the "Test sensor speaker" button).
+bool takeSpeakerTestRequest();
+
 }  // namespace ble

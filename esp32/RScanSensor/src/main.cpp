@@ -48,20 +48,57 @@ void setLed(bool red, bool green, bool blue) {
   digitalWrite(Pin::LedBlue, blue ? LOW : HIGH);
 }
 
-int gBeepsLeft = 0;
-uint32_t gNextBeepMs = 0;
+// A short queue of tones played one after another without blocking the loop.
+constexpr int kMaxTones = 10;
+uint16_t gToneHz[kMaxTones];
+uint16_t gToneMs[kMaxTones];
+int gToneCount = 0;
+int gToneIndex = 0;
+uint32_t gNextToneMs = 0;
 
-void startBeeps() {
-  if (gMuted || gSettings.beepCount == 0) return;
-  gBeepsLeft = gSettings.beepCount;
-  gNextBeepMs = millis();
+void playTones(const uint16_t* hz, const uint16_t* ms, int count) {
+  if (count > kMaxTones) count = kMaxTones;
+  for (int i = 0; i < count; i++) {
+    gToneHz[i] = hz[i];
+    gToneMs[i] = ms[i];
+  }
+  gToneCount = count;
+  gToneIndex = 0;
+  gNextToneMs = millis();
 }
 
-void serviceBeeps(uint32_t now) {
-  if (gBeepsLeft <= 0 || (int32_t)(now - gNextBeepMs) < 0) return;
-  tone(Pin::Speaker, gSettings.beepHz, 110);
-  gBeepsLeft--;
-  gNextBeepMs = now + 230;
+void stopTones() {
+  gToneCount = 0;
+  noTone(Pin::Speaker);
+}
+
+// New detection: the configured pitch, `beeps` times (unless muted).
+void startBeeps() {
+  if (gMuted || gSettings.beepCount == 0) return;
+  uint16_t hz[kMaxTones], ms[kMaxTones];
+  int n = gSettings.beepCount > kMaxTones ? kMaxTones : gSettings.beepCount;
+  for (int i = 0; i < n; i++) {
+    hz[i] = gSettings.beepHz;
+    ms[i] = 110;
+  }
+  playTones(hz, ms, n);
+}
+
+// "Test sensor speaker" from the app: three rising tones, then the alert beep. Plays even
+// when muted, since you asked for it.
+void startSpeakerTest() {
+  const uint16_t hz[] = {1200, 1800, 2600, gSettings.beepHz};
+  const uint16_t ms[] = {180, 180, 180, 300};
+  playTones(hz, ms, 4);
+  screen::showMessage(gMuted ? "Speaker test (ignores mute)" : "Speaker test", millis(), 3000);
+  Serial.println("Speaker test requested by phone");
+}
+
+void serviceTones(uint32_t now) {
+  if (gToneIndex >= gToneCount || (int32_t)(now - gNextToneMs) < 0) return;
+  tone(Pin::Speaker, gToneHz[gToneIndex], gToneMs[gToneIndex]);
+  gNextToneMs = now + gToneMs[gToneIndex] + 110;  // short gap between tones
+  gToneIndex++;
 }
 
 // ------------------------------------------------------------------ touch + BOOT button
@@ -91,10 +128,7 @@ void handleTouch(uint32_t now) {
     gTouchDown = false;
     if (!gHoldHandled && now - gTouchStartMs >= 40) {  // tap: mute / unmute
       gMuted = !gMuted;
-      if (gMuted) {
-        gBeepsLeft = 0;
-        noTone(Pin::Speaker);
-      }
+      if (gMuted) stopTones();
       gPrefs.putBool("muted", gMuted);
     }
   }
@@ -223,6 +257,7 @@ void loop() {
 
   Hit hit;
   while (ble::nextHit(hit)) handleHit(hit);
+  if (ble::takeSpeakerTestRequest()) startSpeakerTest();
 
   Nearby nearby = ble::nearby(now);
   if (nearby.count > 0) {
@@ -234,7 +269,7 @@ void loop() {
 
   handleTouch(now);
   handleBootButton(now);
-  serviceBeeps(now);
+  serviceTones(now);
   screen::update(now, buildStatus(), nearby);
 
   ble::keepScanning();

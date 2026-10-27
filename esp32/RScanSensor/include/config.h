@@ -19,5 +19,6 @@ constexpr int BootButton = 0;
 #define RSCAN_SERVICE_UUID "6E3A0001-5C1B-4B3D-9E1E-7A2F4C8D0B11"
 #define RSCAN_ALERT_UUID   "6E3A0002-5C1B-4B3D-9E1E-7A2F4C8D0B11"  // board -> phone: detections
 #define RSCAN_TIME_UUID    "6E3A0003-5C1B-4B3D-9E1E-7A2F4C8D0B11"  // phone -> board: clock time
+#define RSCAN_COMMAND_UUID "6E3A0004-5C1B-4B3D-9E1E-7A2F4C8D0B11"  // phone -> board: e.g. "TEST,SPEAKER"
 
 #define RSCAN_DEVICE_NAME "RScan"

@@ -41,6 +41,13 @@ int shownBars = -1, shownCount = -1, shownRssi = 1000;
 char shownName[24] = "";
 uint32_t lastDetailDrawMs = 0;
 
+// Footer message (showMessage)
+char gMessage[40] = "";
+uint32_t gMessageUntil = 0;
+bool gMessageShown = false;
+
+bool messageActive(uint32_t nowMs) { return gMessage[0] && (int32_t)(nowMs - gMessageUntil) < 0; }
+
 void drawText(const char* text, int16_t x, int16_t baseline, const GFXfont* font, uint16_t color) {
   tft.setFont(font);
   tft.setTextColor(color);
@@ -98,13 +105,18 @@ void drawHeader(const Status& s) {
   shownHeader = headerKey(s);
 }
 
-void drawFooter(const Status& s) {
+void drawFooter(const Status& s, bool showMessageText) {
   tft.fillRect(0, FOOTER_Y, tft.width(), tft.height() - FOOTER_Y, C_BAR);
-  char text[24];
-  snprintf(text, sizeof(text), "Alerts: %d", s.alerts);
-  drawText(text, 10, 226, &FreeSans9pt7b, C_TEXT);
-  drawRight("Tap: mute  Hold: dim", tft.width() - 10, 226, &FreeSans9pt7b, C_DIM);
+  if (showMessageText) {
+    drawCentered(gMessage, 226, &FreeSans9pt7b, C_AMBER);
+  } else {
+    char text[24];
+    snprintf(text, sizeof(text), "Alerts: %d", s.alerts);
+    drawText(text, 10, 226, &FreeSans9pt7b, C_TEXT);
+    drawRight("Tap: mute  Hold: dim", tft.width() - 10, 226, &FreeSans9pt7b, C_DIM);
+  }
   shownAlerts = s.alerts;
+  gMessageShown = showMessageText;
 }
 
 void lastSeenText(uint32_t now, const Status& s, char* out, size_t outLen) {
@@ -224,7 +236,7 @@ void showSplash(const char* sdLine, uint16_t sdLineColor565, const char* configL
 void redrawAll(uint32_t nowMs, const Status& s, const Nearby& n) {
   tft.fillScreen(C_BG);
   drawHeader(s);
-  drawFooter(s);
+  drawFooter(s, messageActive(nowMs));
   if (n.count > 0) {
     drawAlert(n);
   } else {
@@ -234,7 +246,8 @@ void redrawAll(uint32_t nowMs, const Status& s, const Nearby& n) {
 
 void update(uint32_t nowMs, const Status& s, const Nearby& n) {
   if (headerKey(s) != shownHeader) drawHeader(s);
-  if (s.alerts != shownAlerts) drawFooter(s);
+  bool message = messageActive(nowMs);
+  if (s.alerts != shownAlerts || message != gMessageShown) drawFooter(s, message);
 
   if (n.count > 0) {
     if (shownMode != 1) {
@@ -251,6 +264,12 @@ void update(uint32_t nowMs, const Status& s, const Nearby& n) {
     lastSeenText(nowMs, s, text, sizeof(text));
     if (strcmp(text, shownLastSeen) != 0) drawLastSeen(text);
   }
+}
+
+void showMessage(const char* text, uint32_t nowMs, uint32_t durationMs) {
+  strlcpy(gMessage, text, sizeof(gMessage));
+  gMessageUntil = nowMs + durationMs;
+  gMessageShown = false;  // force the next update() to draw it
 }
 
 uint16_t green() { return C_GREEN; }

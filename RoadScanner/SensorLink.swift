@@ -8,6 +8,8 @@ enum SensorUUIDs {
     static let alert = CBUUID(string: "6E3A0002-5C1B-4B3D-9E1E-7A2F4C8D0B11")
     /// Phone -> board: the current time, so the board's SD log has real dates.
     static let time = CBUUID(string: "6E3A0003-5C1B-4B3D-9E1E-7A2F4C8D0B11")
+    /// Phone -> board: commands such as "TEST,SPEAKER".
+    static let command = CBUUID(string: "6E3A0004-5C1B-4B3D-9E1E-7A2F4C8D0B11")
 }
 
 struct PoliceHit {
@@ -30,11 +32,25 @@ final class SensorLink: NSObject, ObservableObject {
     }
 
     @Published private(set) var status: Status = .off
+    /// True when the connected sensor's firmware supports commands (the speaker test).
+    @Published private(set) var canSendCommands = false
     var onHit: (@MainActor (PoliceHit) -> Void)?
 
     private var central: CBCentralManager?
     private var sensor: CBPeripheral?
+    private var commandCharacteristic: CBCharacteristic?
     private var wantsRunning = false
+
+    /// Asks the board to play its test tones (works even when the board is muted).
+    func testSpeaker() {
+        guard status == .connected, let sensor, let commandCharacteristic else { return }
+        sensor.writeValue(Data("TEST,SPEAKER".utf8), for: commandCharacteristic, type: .withResponse)
+    }
+
+    private func forgetCharacteristics() {
+        commandCharacteristic = nil
+        canSendCommands = false
+    }
 
     func start() {
         wantsRunning = true
@@ -53,6 +69,7 @@ final class SensorLink: NSObject, ObservableObject {
             central.stopScan()
             if let sensor { central.cancelPeripheralConnection(sensor) }
         }
+        forgetCharacteristics()
         status = .off
     }
 
@@ -116,6 +133,7 @@ extension SensorLink: CBCentralManagerDelegate {
                                     error: Error?) {
         MainActor.assumeIsolated {
             sensor = nil
+            forgetCharacteristics()
             connectOrScan()
         }
     }
@@ -123,6 +141,7 @@ extension SensorLink: CBCentralManagerDelegate {
     nonisolated func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral,
                                     error: Error?) {
         MainActor.assumeIsolated {
+            forgetCharacteristics()
             connectOrScan()
         }
     }
@@ -131,7 +150,7 @@ extension SensorLink: CBCentralManagerDelegate {
 extension SensorLink: CBPeripheralDelegate {
     nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let service = peripheral.services?.first(where: { $0.uuid == SensorUUIDs.service }) else { return }
-        peripheral.discoverCharacteristics([SensorUUIDs.alert, SensorUUIDs.time], for: service)
+        peripheral.discoverCharacteristics([SensorUUIDs.alert, SensorUUIDs.time, SensorUUIDs.command], for: service)
     }
 
     nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService,
@@ -145,6 +164,12 @@ extension SensorLink: CBPeripheralDelegate {
             let now = Int(Date().timeIntervalSince1970)
             let offset = TimeZone.current.secondsFromGMT()
             peripheral.writeValue(Data("TIME,\(now),\(offset)".utf8), for: time, type: .withResponse)
+        }
+        // Older firmware has no command characteristic; the speaker test button stays disabled.
+        let command = characteristics.first(where: { $0.uuid == SensorUUIDs.command })
+        MainActor.assumeIsolated {
+            commandCharacteristic = command
+            canSendCommands = command != nil
         }
     }
 
