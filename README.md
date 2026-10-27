@@ -2,6 +2,15 @@
 
 Spoken alerts for mapped speed and license-plate (ALPR / Flock) cameras, plus police-gear alerts from a small ESP32 sensor. Alerts play through CarPlay or your car's Bluetooth the same way navigation directions do, so you never have to look at the phone.
 
+**Features**
+
+- **Camera alerts:** "Flock camera ahead, 600 feet." Uses OpenStreetMap / DeFlock camera data, saved on the phone so it works without signal.
+- **Map tab:** the cameras around you, color-coded by type, with a wedge showing which way each one points.
+- **Police-gear sensor:** an ESP32 "Cheap Yellow Display" in the car listens for Axon equipment (body cams, Tasers, in-car systems), shows it on its own screen, and alerts the phone.
+- **SD card log:** the sensor saves every detection with date and time to a CSV file. A settings file on the card lets you change beeps, timing, and what it watches for.
+- **Tests:** **Test voice** checks the car audio, and **Test sensor speaker** makes the board beep.
+- **No Mac needed:** GitHub builds the app and the firmware on every push and publishes both as a Release.
+
 **What's in this folder**
 
 | Path | What it is |
@@ -39,14 +48,19 @@ If the build fails, open the failed step, copy the red error lines, and send the
 
 ## 2. Install it on your iPhone from Windows (free Apple ID)
 
-1. Install **iTunes from Apple's website** (not the Microsoft Store version) and **[Sideloadly](https://sideloadly.io)**.
+1. Install **iTunes from Apple's website** (not the Microsoft Store version) and **[iloader](https://github.com/nab138/iloader)** (from its Releases page).
 2. Plug your iPhone into the PC with a cable and tap **Trust** on the phone if it asks.
-3. Open Sideloadly, drag in `RoadScanner.ipa`, enter your Apple ID, and click **Start**. You can use a second Apple ID if you'd rather not use your main one; it must have been signed in on an iPhone at least once.
-4. On the iPhone:
+3. Open iloader and sign in with your Apple ID. A second Apple ID is a good idea (see the note below); it must have been signed in on an iPhone at least once.
+4. Choose **Import any IPA**, pick `RoadScanner.ipa`, and let it install.
+5. On the iPhone:
    - **Settings > General > VPN & Device Management**: tap your Apple ID and tap **Trust**.
    - If iOS says Developer Mode is required: **Settings > Privacy & Security > Developer Mode**, turn it on, and restart the phone.
 
-**Every 7 days** the free signature expires and the app stops opening. Run Sideloadly again with the same `.ipa` **over the existing app**. Don't delete the app first, or you'll lose your saved cameras and settings.
+**Every 7 days** the free signature expires and the app stops opening. Install the latest `RoadScanner.ipa` again **over the existing app**. Don't delete the app first, or you'll lose your saved cameras and settings.
+
+**Why iloader and not Sideloadly:** since late October 2026, Apple's sign-in check rejects free sideloading tools, which shows up as `Login failed (-80046)` in Sideloadly. iloader 2.4.0 and later work around it by using a community-run sign-in server, which is why a second Apple ID is safer. Sideloadly works the same way once it ships a fix. Don't keep retrying a failing login with your main Apple ID; repeated failures can lock it temporarily.
+
+**Updating:** push your changes, wait for the green check, download the new `RoadScanner.ipa` from the latest Release, and install it over the old one.
 
 ## 3. Use it
 
@@ -132,4 +146,17 @@ On this board the display and the SD card each use one of the ESP32's two hardwa
 - **Police gear range:** Bluetooth reaches roughly tens of meters. "Police equipment" means an officer's gear is close by, not that a speed trap is ahead. Not every officer's gear broadcasts.
 - **Mounting the sensor:** put it where it doesn't block your view of the road, and check the windshield-mount rules for any state you drive through. The phone voice and beeps are enough while driving, so you don't need to watch the screen.
 - **CarPlay screen:** the app plays audio only and doesn't appear on the CarPlay screen. Putting it there would need a paid developer account and Apple's approval of a CarPlay entitlement.
+- **Apple Maps routes:** iOS doesn't let other apps see the route you're navigating in Apple Maps, so Road Scanner alerts on every mapped camera around you, not just the ones on your route.
 - **Driving:** set things up before you drive. The voice is there so you don't have to touch the phone.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| No **Map** tab, or no version line at the bottom of the Scanner tab | An old `.ipa` got installed. Download `RoadScanner.ipa` from the **latest Release** (not an old download or an old Actions run), install it, and check the build number matches the release. |
+| Sideloadly: `Login failed (-80046)` | Apple-side change in October 2026. Use iloader (section 2) until Sideloadly ships a fix. |
+| PlatformIO: `MissingPackageManifestError` | A download got cut off. Close VS Code, delete the `platforms`, `packages`, `tools` and `.cache` folders in `C:\Users\<you>\.platformio` (leave `penv`), reopen, wait for setup to finish, then Build. |
+| "ESP32 sensor: Looking for sensor…" never connects | Make sure the board is powered and shows its start-up screen, the app's ESP32 sensor switch is on, and Bluetooth is allowed for Road Scanner in iPhone Settings. |
+| **Test sensor speaker** is greyed out | The sensor isn't connected, or it's running older firmware. Flash `rscan-cyd-factory.bin` from the latest Release. |
+| The sensor screen's colors look inverted | Press the board's **BOOT** button once. It remembers the setting. |
+| GitHub build failed | Open the failed step, copy the red error lines, and send them to Claude. |
